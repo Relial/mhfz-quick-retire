@@ -1,61 +1,69 @@
-use crate::{
-    address::{Addresses, Player},
-    config::DeathRetireKind,
-    plugin::{RETIRE, SKIP_WAIT, STATE},
-};
+use crate::{config::DeathRetireKind, plugin::STATE};
 
-use anyhow::Result;
-use ilhook::x86::{CallbackOption, ClosureHookPoint, HookFlags, Registers, hook_closure_jmp_back};
-use tracing::info;
+static mut SKIPPING: bool = false;
 
-#[allow(static_mut_refs)]
-fn hook_quest_update<'a>(addresses: Addresses) -> Result<ClosureHookPoint<'a>> {
-    let on_call = move |reg: *mut Registers| unsafe {
-        if let Some(config) = STATE.as_ref().map(|s| &s.config) {
-            if let Some(quest) = addresses.quest() {
-                if (config.skip_quest_complete_wait || SKIP_WAIT.trigger()) && quest.complete() {
-                    quest.set_remaining_time(0);
-                    SKIP_WAIT.reset();
-                }
+pub unsafe extern "C" fn on_quest_update() {
+    unsafe {
+        SKIPPING = false;
 
-                if config.retire_on_death.enabled {
-                    match config.retire_on_death.kind {
-                        DeathRetireKind::HealthDepleted => {
-                            let player = Player::from_addr((*reg).ebx);
-                            if player.current_health(&addresses) == 0 {
-                                RETIRE.set();
-                            }
+        let state = STATE.get_unchecked();
+        let addresses = &state.addresses;
+        let config = &state.config;
+        let triggers = &state.triggers;
+
+        let mut force_retire = false;
+
+        let end_skip = config.skip_quest_complete_wait || triggers.skip_wait;
+        if end_skip {
+            SKIPPING = true;
+        }
+
+        if let Some(quest) = addresses.quest() {
+            if end_skip && quest.complete() {
+                quest.set_time_remaining(0);
+            }
+
+            if config.retire_on_death.enabled {
+                match config.retire_on_death.kind {
+                    DeathRetireKind::HealthDepleted => {
+                        let player = addresses.own_player().unwrap_unchecked();
+                        if player.health(
+                            addresses.encryption1,
+                            addresses.encryption2,
+                            addresses.encryption3,
+                        ) == 0
+                        {
+                            force_retire = true;
                         }
-                        DeathRetireKind::Carted => {
-                            if quest.carted_count() >= config.retire_on_death.carts_needed {
-                                RETIRE.set();
-                            }
+                    }
+                    DeathRetireKind::Carted => {
+                        if quest.carted_count() >= config.retire_on_death.carts_needed
+                            && quest.remaining_carts() != 0
+                        {
+                            force_retire = true;
                         }
                     }
                 }
             }
-
-            if RETIRE.trigger() {
-                let ptr = (*reg).edi as *mut u8;
-                ptr.write(6);
-                RETIRE.reset();
-            }
         }
-    };
 
-    let hook_address = addresses.quest_update;
-    let hook = unsafe {
-        hook_closure_jmp_back(
-            hook_address,
-            on_call,
-            CallbackOption::None,
-            HookFlags::empty(),
-        )?
-    };
-    info!("Hooked at {:#X}", hook_address);
-    Ok(hook)
+        if force_retire || triggers.retire {
+            SKIPPING = true;
+            let player_info = addresses.player_info().unwrap_unchecked();
+            player_info.set_retire();
+        }
+    }
 }
 
-pub fn init<'a>(addresses: &Addresses) -> Result<Vec<ClosureHookPoint<'a>>> {
-    Ok(vec![hook_quest_update(*addresses)?])
+pub unsafe extern "C" fn on_quest_end() {
+    unsafe {
+        if SKIPPING {
+            let addresses = STATE.get_unchecked().addresses;
+            if let Some(player_info) = addresses.player_info() {
+                player_info.skip_timers();
+            }
+            let iframe_flags = addresses.iframe_flags();
+            iframe_flags.write(0);
+        }
+    }
 }

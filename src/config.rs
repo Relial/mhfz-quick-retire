@@ -1,10 +1,9 @@
 use std::path::Path;
 
 use anyhow::Result;
-use bunny_ui::{
+use bunny_plugin::bunny_ui::{
     input::{KeyboardShortcut, Modifiers},
     key::Key,
-    num::Num,
 };
 use serde::{Deserialize, Serialize};
 
@@ -29,7 +28,7 @@ impl std::fmt::Display for DeathRetireKind {
 pub struct DeathRetire {
     pub enabled: bool,
     pub kind: DeathRetireKind,
-    pub carts_needed: Num,
+    pub carts_needed: u32,
 }
 
 impl Default for DeathRetire {
@@ -37,7 +36,7 @@ impl Default for DeathRetire {
         Self {
             enabled: false,
             kind: Default::default(),
-            carts_needed: Num::new_integer(1),
+            carts_needed: 1,
         }
     }
 }

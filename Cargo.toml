@@ -1,18 +1,23 @@
 [package]
 name = "quick-retire"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-abi_stable = "0.11.3"
-anyhow = "1.0.102"
+anyhow = "1.0.103"
 ilhook = { version = "2.3.0", default-features = false, features = ["x86"] }
-bunny-ui = {path = "../bunny-ui"}
+bunny-plugin = { git = "https://github.com/Relial/bunny-plugin.git", tag = "api-v2" }
 tracing = "0.1.44"
 tracing-subscriber = "0.3.23"
-mimalloc = "0.1.50"
+mimalloc = "0.1.52"
 serde = { version = "1.0.228", features = ["derive"] }
 toml = "1.1.2"
+windows = { version = "0.*", features = [
+    "Win32_Foundation",
+    "Win32_System_SystemServices",
+    "Win32_System_LibraryLoader",
+] }
+mhfz-structs = { git = "https://github.com/Relial/mhfz-structs.git", rev = "258ca6a0a74a10a4347500d526a5100a9bad0708" }
