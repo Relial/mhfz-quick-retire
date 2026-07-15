@@ -12,7 +12,6 @@ ilhook = { version = "2.3.0", default-features = false, features = ["x86"] }
 bunny-plugin = { git = "https://github.com/Relial/bunny-plugin.git", tag = "api-v2" }
 tracing = "0.1.44"
 tracing-subscriber = "0.3.23"
-mimalloc = "0.1.52"
 serde = { version = "1.0.228", features = ["derive"] }
 toml = "1.1.2"
 windows = { version = "0.*", features = [
