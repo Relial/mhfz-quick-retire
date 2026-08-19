@@ -7,7 +7,7 @@ pub unsafe extern "C" fn on_quest_update() {
         SKIPPING = false;
 
         let state = STATE.get_unchecked();
-        let addresses = &state.addresses;
+        let structs = &state.structs;
         let config = &state.config;
         let triggers = &state.triggers;
 
@@ -18,7 +18,7 @@ pub unsafe extern "C" fn on_quest_update() {
             SKIPPING = true;
         }
 
-        if let Some(quest) = addresses.quest() {
+        if let Some(quest) = structs.quest_info() {
             if end_skip && quest.complete() {
                 quest.set_time_remaining(0);
             }
@@ -26,13 +26,8 @@ pub unsafe extern "C" fn on_quest_update() {
             if config.retire_on_death.enabled {
                 match config.retire_on_death.kind {
                     DeathRetireKind::HealthDepleted => {
-                        let player = addresses.own_player().unwrap_unchecked();
-                        if player.health(
-                            addresses.encryption1,
-                            addresses.encryption2,
-                            addresses.encryption3,
-                        ) == 0
-                        {
+                        let player = structs.own_player().unwrap_unchecked();
+                        if player.health() == 0 {
                             force_retire = true;
                         }
                     }
@@ -49,7 +44,7 @@ pub unsafe extern "C" fn on_quest_update() {
 
         if force_retire || triggers.retire {
             SKIPPING = true;
-            let player_info = addresses.player_info().unwrap_unchecked();
+            let player_info = structs.player_info().unwrap_unchecked();
             player_info.set_retire();
         }
     }
@@ -58,11 +53,11 @@ pub unsafe extern "C" fn on_quest_update() {
 pub unsafe extern "C" fn on_quest_end() {
     unsafe {
         if SKIPPING {
-            let addresses = STATE.get_unchecked().addresses;
-            if let Some(player_info) = addresses.player_info() {
+            let state = STATE.get_unchecked();
+            if let Some(player_info) = state.structs.player_info() {
                 player_info.skip_timers();
             }
-            let iframe_flags = addresses.iframe_flags();
+            let iframe_flags = state.addresses.iframe_flags();
             iframe_flags.write(0);
         }
     }

@@ -4,35 +4,42 @@ use std::{
 };
 
 use bunny_plugin::{
-    PluginContext,
+    GameMode, PluginContext,
     bunny_ui::{
+        Id,
         ui::BunnyUi,
         widgets::{drag_value::DragValue, shortcut_button::ShortcutButton},
     },
 };
+use mhfz_structs::MhfzStructs;
 use tracing::error;
 
-use crate::{address::Addresses, config::{Config, DeathRetireKind}};
+use crate::{
+    address::Addresses,
+    config::{Config, DeathRetireKind},
+};
 
 const TRIGGER_TIMEOUT: Duration = Duration::from_secs(1);
 
 pub struct State {
-    pub context: PluginContext,
     pub addresses: Addresses,
+    pub structs: MhfzStructs,
     pub config: Config,
     config_path: PathBuf,
     pub triggers: Triggers,
 }
 
 impl State {
-    pub fn new(context: PluginContext, addresses: Addresses) -> Self {
+    pub fn new(context: &PluginContext, addresses: Addresses) -> Self {
         let config_path = context
             .config_dir()
             .join(format!("{}.toml", env!("CARGO_PKG_NAME")));
         let config = Config::load(&config_path).unwrap_or_default();
+        let info = context.mhfo_info();
+        let structs = MhfzStructs::new(info.address, info.game_mode == GameMode::HighGrade);
         Self {
-            context,
             addresses,
+            structs,
             config_path,
             config,
             triggers: Triggers::default(),
@@ -46,7 +53,7 @@ impl<'a> State {
             ui.label("Retire keybind:");
             ui.add(ShortcutButton::new(
                 &mut self.config.retire_keybind,
-                "Retire keybind",
+                Id::from_salt("Retire keybind"),
             ));
         });
 
@@ -88,7 +95,7 @@ impl<'a> State {
             ui.label("Wait time skip keybind:");
             ui.add(ShortcutButton::new(
                 &mut self.config.wait_time_keybind,
-                "Wait time keybind",
+                Id::from_salt("Wait time keybind"),
             ));
         });
         ui.checkbox(
