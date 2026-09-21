@@ -906,7 +906,7 @@ checksum = "f8ca58f447f06ed17d5fc4043ce1b10dd205e060fb3ce5b979b8ed8e59ff3f79"
 [[package]]
 name = "mhfz-structs"
 version = "0.1.0"
-source = "git+https://github.com/Relial/mhfz-structs.git?rev=6a63007c8399eabab59089a3b10ae22f6cde7c06#6a63007c8399eabab59089a3b10ae22f6cde7c06"
+source = "git+https://github.com/Relial/mhfz-structs.git?rev=d7bdad2996a0cc96561a6f81ec5455203cea3844#d7bdad2996a0cc96561a6f81ec5455203cea3844"
 dependencies = [
  "glam",
  "strum",
@@ -1202,7 +1202,7 @@ checksum = "a993555f31e5a609f617c12db6250dedcac1b0a85076912c436e6fc9b2c8e6a3"
 
 [[package]]
 name = "quick-retire"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "anyhow",
  "bunny-plugin",
